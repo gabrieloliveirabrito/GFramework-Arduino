@@ -1,0 +1,8 @@
+{
+    "sketch": "gframework.ino",
+    "board": "arduino:avr:mega",
+    "port": "COM10",
+    "programmer": "arduino:avrisp",
+    "configuration": "cpu=atmega2560",
+    "output": "./output"
+}
