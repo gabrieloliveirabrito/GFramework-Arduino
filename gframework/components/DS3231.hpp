@@ -9,18 +9,16 @@ class DS3231 : public Component
 public:
     void Initialize()
     {
-        Serial.print("Initializing DS3231 component");
+        Serial.println("Initializing DS3231 component");
 
         Wire.begin();
         WriteControlRegister(DS3231_CONTROL_INTCN);
         Write32kHzOutput(false);
-
-        Component::Initialize();
     }
 
     void Initialize(uint8_t ctrl_reg)
     {
-        Serial.print("Initializing DS3231 component");
+        Serial.println("Initializing DS3231 component");
 
         Wire.begin();
         WriteControlRegister(ctrl_reg);

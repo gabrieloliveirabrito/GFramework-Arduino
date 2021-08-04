@@ -17,6 +17,9 @@ public:
         this->id = id;
         this->getter = getter;
         this->changed = changed;
+        this->value = getter->Call();
+
+        changed->Call(value, value);
     }
 
     String GetId() { return id; }
@@ -36,6 +39,11 @@ public:
                 this->value = value;
             }
         }
+    }
+
+    void Trigger()
+    {
+        changed->Call(value, value);
     }
 
 private:

@@ -3,6 +3,6 @@
 class Component
 {
 public:
-    void Initialize() {}
-    void Update() {}
+    virtual void Initialize() {}
+    virtual void Update() {}
 };

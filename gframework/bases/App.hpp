@@ -10,6 +10,10 @@ public:
         this->components = new List<Component *>();
     }
 
+    void Setup()
+    {
+    }
+
     void Initialize()
     {
         for (int i = 0, n = components->Count(); i < n; i++)
@@ -17,6 +21,9 @@ public:
             Component *component = components->GetItem(i);
             component->Initialize();
         }
+
+        Serial.print(components->Count(), DEC);
+        Serial.println(" components has been initialized!");
     }
 
     void Run()
@@ -26,11 +33,18 @@ public:
             Component *component = components->GetItem(i);
             component->Update();
         }
-        delay(500);
+        delay(100);
     }
 
     void InitSerial() { InitSerial(9600); }
-    void InitSerial(int baudRate) { Serial.begin(baudRate); }
+    void InitSerial(int baudRate)
+    {
+        Serial.begin(baudRate);
+        while (!Serial)
+        {
+            delay(100);
+        }
+    }
 
     template <typename T>
     T *RegisterComponent(T *instance)

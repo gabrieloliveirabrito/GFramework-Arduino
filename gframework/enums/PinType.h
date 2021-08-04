@@ -1,6 +1,8 @@
 #pragma once
 
-enum PinType {
+enum PinMode
+{
     IN,
+    IN_PULLUP,
     OUT
 };

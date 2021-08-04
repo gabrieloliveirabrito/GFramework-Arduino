@@ -1,74 +1,121 @@
 #pragma once
-#include <LiquidCrystal.h>
+#include <SPI.h>
+#include <Ethernet.h>
 
 #include "../gframework/includes.h"
+#include "network/includes.h"
+#include "LCD.hpp"
 #include "pins.h"
 #include "defines.h"
+
+byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 
 class Application : App
 {
 private:
-    LiquidCrystal *lcd;
+    LCD *lcd;
     LED *blink, *powerLed, *hddLed, *errorLed;
-    StateMachine<Application, int> *intMachine;
+    Pin *moboPwrLed, *moboPwrBtn, *moboHddLed, *moboResetBtn;
     DS3231 *clock;
+    DHT *dht;
+
+    StateMachine<Application, int> *intMachine;
+    EventHandler<Application, int> *GetPowerLedEvent, *GetHDDLedEvent;
+    EventHandler<Application, void, int, int> *PowerLedChangedEvent, *HDDLedChangedEvent;
+
+    StateMachine<Application, float> *floatMachine;
+    EventHandler<Application, float> *GetDHTTemperatureEvent, *GetDHTHumidityEvent;
+    EventHandler<Application, void, float, float> *DHTTemperatureChangedEvent, *DHTHumidityChangedEvent;
 
 public:
-    void Initialize()
+    void Setup()
     {
         InitSerial();
-        lcd = new LiquidCrystal(LCD_RS, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
-        lcd->begin(16, 2);
-        lcd->clear();
+        Serial.println("Creating components...");
 
-        pinMode(LCD_CON, OUTPUT);
-        digitalWrite(LCD_CON, 0);
-
-        Serial.println("Initializing...");
-
-        lcd->setCursor(0, 0);
-        lcd->write("===ATX Panel===");
-        lcd->setCursor(0, 1);
-        lcd->write("Initializing....");
-
+        lcd = RegisterComponent(new LCD());
+        clock = RegisterComponent(new DS3231());
         blink = RegisterComponent(new LED(LED_BUILTIN));
         powerLed = RegisterComponent(new LED(POWER_LED));
         hddLed = RegisterComponent(new LED(HDD_LED));
         errorLed = RegisterComponent(new LED(BEEP_LED));
-        clock = RegisterComponent(new DS3231());
-        clock->Initialize();
-
-        blink->Enable();
-
-        pinMode(MOBO_PWR_BTN, OUTPUT);
-        pinMode(MOBO_PWR_LED, INPUT_PULLUP);
-        pinMode(MOBO_HDD_LED, INPUT_PULLUP);
-        pinMode(MOBO_SPEAKER_HIGH, INPUT);
-        digitalWrite(BEEP_LED, HIGH);
-        digitalWrite(HDD_LED, HIGH);
-        digitalWrite(MOBO_PWR_BTN, RELEASED);
-
-        lcd->setCursor(0, 1);
-        lcd->write("   Components   ");
-
-        delay(250);
-        digitalWrite(POWER_LED, LOW);
-        digitalWrite(BEEP_LED, LOW);
-        digitalWrite(HDD_LED, LOW);
-
-        lcd->setCursor(0, 1);
-        lcd->write("  St. Machines  ");
+        moboPwrBtn = RegisterComponent(new Pin(MOBO_PWR_BTN, PinType::DIGITAL, PinMode::OUT, RELEASED));
+        moboPwrLed = RegisterComponent(new Pin(MOBO_PWR_LED, PinType::DIGITAL, PinMode::IN_PULLUP));
+        moboHddLed = RegisterComponent(new Pin(MOBO_HDD_LED, PinType::DIGITAL, PinMode::IN_PULLUP));
+        moboResetBtn = RegisterComponent(new Pin(MOBO_RES_BTN, PinType::DIGITAL, PinMode::OUT, RELEASED));
+        dht = RegisterComponent(new DHT(A15, DHTType::DHT11));
 
         intMachine = new StateMachine<Application, int>();
-        intMachine->AddHandler("POWER_LED",
-                               new EventHandler<Application, int>(this, &Application::GetPowerLedState),
-                               new EventHandler<Application, void, int, int>(this, &Application::PowerLedStateChanged));
+        floatMachine = new StateMachine<Application, float>();
 
+        CreateEvents();
+        App::Setup();
+    }
+
+    void CreateEvents()
+    {
+        GetPowerLedEvent = new EventHandler<Application, int>(this, &Application::GetPowerLed);
+        PowerLedChangedEvent = new EventHandler<Application, void, int, int>(this, &Application::PowerLedChanged);
+        GetHDDLedEvent = new EventHandler<Application, int>(this, &Application::GetHDDLed);
+        HDDLedChangedEvent = new EventHandler<Application, void, int, int>(this, &Application::HDDLedChanged);
+        GetDHTTemperatureEvent = new EventHandler<Application, float>(this, &Application::GetDHTTemperature);
+        DHTTemperatureChangedEvent = new EventHandler<Application, void, float, float>(this, &Application::DHTTemperatureChanged);
+        GetDHTHumidityEvent = new EventHandler<Application, float>(this, &Application::GetDHTHumidity);
+        DHTHumidityChangedEvent = new EventHandler<Application, void, float, float>(this, &Application::DHTHumidityChanged);
+    }
+
+    void Initialize()
+    {
+        Serial.println("Initializing...");
         App::Initialize();
 
-        lcd->setCursor(0, 1);
-        lcd->write("  Initialized!  ");
-        delay(2000);
+        lcd->ShowInitializing();
+        blink->Enable();
+
+#ifdef WITH_ETHERNET
+        Serial.println("Initialize Ethernet with DHCP:");
+        lcd->ShowFetchingDHCP();
+        if (Ethernet.begin(mac) == 0)
+        {
+            Serial.println("Failed to configure Ethernet using DHCP");
+
+            if (Ethernet.hardwareStatus() == EthernetNoHardware)
+            {
+                Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
+                lcd->ShowNoEthernetHadware();
+                //TODO: No Ethernet
+            }
+            else if (Ethernet.linkStatus() == LinkOFF)
+            {
+                Serial.println("Ethernet cable is not connected.");
+                lcd->ShowNoEthernetCable();
+            }
+            else
+                lcd->ShowDHCPFailed();
+
+            lcd->ShowNoEthernet();
+            //Ethernet.begin(mac, ip, myDns);
+        }
+        else
+        {
+            Serial.print("  DHCP assigned IP ");
+            Serial.println(Ethernet.localIP());
+
+            lcd->ShowEthernetIP(Ethernet.localIP());
+        }
+
+        lcd->ShowSyncing();
+#endif
+
+        Serial.println("System initialized");
+        lcd->ShowInitialized();
+
+        intMachine->AddHandler("POWER_LED", GetPowerLedEvent, PowerLedChangedEvent);
+        intMachine->AddHandler("HDD_LED", GetHDDLedEvent, HDDLedChangedEvent);
+
+        floatMachine->AddHandler("DHT_TEMPERATURE", GetDHTTemperatureEvent, DHTTemperatureChangedEvent);
+        floatMachine->AddHandler("DHT_HUMIDITY", GetDHTHumidityEvent, DHTHumidityChangedEvent);
+        delay(500);
     }
 
     String cmd;
@@ -83,24 +130,22 @@ public:
                 PowerOn();
             if (cmd == "P_OFF")
                 PowerOff();
+            if (cmd == "P_READ")
+                Serial.println(GetPowerLed() ? "ON" : "OFF");
         }
 
         intMachine->Update();
+        floatMachine->Update();
 
         DateTime dt;
         if (clock->Get(&dt))
         {
-            lcd->setCursor(0, 1);
-            char buf[8];
-            sprintf(buf, "%d:%d:%d", dt.hour, dt.min, dt.sec);
-
-            lcd->write(buf);
+            lcd->ShowClock(dt);
         }
         else
         {
-            lcd->setCursor(0, 1);
-            lcd->write("Clock Mod. Error");
-        }
+            lcd->ShowClockError();
+        };
 
         blink->Toggle();
         App::Run();
@@ -109,59 +154,70 @@ public:
     void PowerOn()
     {
         //lcd.clear();
-        if (digitalRead(MOBO_PWR_LED) == HIGH)
+        if (GetPowerLed() == HIGH)
         {
-            //lcd.print("Already ON!");
-            Serial.print("Already powered on!");
-            delay(100);
+            lcd->ShowPCAlreadyOn();
+            Serial.println("Already powered on!");
         }
         else
         {
-            //lcd.print("Powering on...");
+            lcd->ShowPCPoweringOn();
 
             Serial.print("Powering on...");
-            digitalWrite(MOBO_PWR_BTN, PRESSED);
-            while (digitalRead(MOBO_PWR_LED) == LOW)
+            moboPwrBtn->Write(PRESSED);
+            while (!GetPowerLed())
+            {
+                Serial.print(GetPowerLed());
                 delay(50);
-            digitalWrite(MOBO_PWR_BTN, RELEASED);
+            }
+            moboPwrBtn->Write(RELEASED);
             Serial.println("Powered on!");
 
-            //lcd.clear();
+            lcd->ShowPCPoweredOn();
         }
+
+        lcd->ShowInitialized();
+        intMachine->TriggerChanged();
     }
 
     void PowerOff()
     {
         //lcd.clear();
-        if (digitalRead(MOBO_PWR_LED) == LOW)
+        if (GetPowerLed() == LOW)
         {
-            //lcd.print("Already OFF!");
-            Serial.print("Already powered off!");
-            delay(1000);
+            Serial.println("Already powered off!");
+            lcd->ShowPCAlreadyOff();
         }
         else
         {
-            //lcd.print("Powering off...");
+            lcd->ShowPCPoweringOff();
 
             Serial.println("Powering off...");
-            digitalWrite(MOBO_PWR_BTN, PRESSED);
+            moboPwrBtn->Write(PRESSED);
             Serial.print("Please wait...");
-            while (digitalRead(MOBO_PWR_LED) == HIGH)
+            while (GetPowerLed())
+            {
+                Serial.print(GetPowerLed());
                 delay(50);
-            digitalWrite(MOBO_PWR_BTN, RELEASED);
+            }
+            moboPwrBtn->Write(RELEASED);
             Serial.println("Powered off");
 
-            //lcd.clear();
+            lcd->ShowPCPoweredOff();
         }
+
+        lcd->ShowInitialized();
+        intMachine->TriggerChanged();
     }
 
 private:
-    int GetPowerLedState()
+    int GetPowerLed()
     {
-        return digitalRead(MOBO_PWR_LED);
+        //Serial.println("Getting power led value");
+        return moboPwrLed->Read() == LOW;
     }
 
-    void PowerLedStateChanged(int oldValue, int newValue)
+    void PowerLedChanged(int oldValue, int newValue)
     {
         Serial.print("Power Led from ");
         Serial.print(oldValue);
@@ -169,8 +225,37 @@ private:
         Serial.println(newValue);
 
         if (newValue == HIGH)
-            blink->Enable();
+            powerLed->Enable();
         else
-            blink->Disable();
+            powerLed->Disable();
+
+        lcd->ShowLedState(newValue, moboHddLed->Read() == LOW);
     }
+
+    int GetHDDLed()
+    {
+        //Serial.println("Getting hdd led value");
+        return moboHddLed->Read() == LOW;
+    }
+
+    void HDDLedChanged(int oldValue, int newValue)
+    {
+        Serial.print("HDD Led from ");
+        Serial.print(oldValue);
+        Serial.print(" to ");
+        Serial.println(newValue);
+
+        if (newValue == HIGH)
+            hddLed->Enable();
+        else
+            hddLed->Disable();
+
+        lcd->ShowLedState(moboPwrLed->Read() == LOW, newValue);
+    }
+
+    float GetDHTTemperature() { return dht->ReadTemperature(false); }
+    void DHTTemperatureChanged(float oldValue, float newValue) { lcd->ShowTemperature(newValue); }
+
+    float GetDHTHumidity() { return dht->ReadHumidity(false); }
+    void DHTHumidityChanged(float oldValue, float newValue) { lcd->ShowHumidity(newValue); }
 };

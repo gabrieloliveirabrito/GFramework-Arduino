@@ -4,9 +4,21 @@
 class LED : public Pin
 {
 public:
-    LED(int number) : Pin(number, PinMode::DIGITAL, PinType::OUT)
+    LED(int number) : Pin(number, PinType::DIGITAL, PinMode::OUT)
     {
         this->state = LOW;
+        this->Write(state);
+    }
+
+    LED(int number, PinType type) : Pin(number, type, PinMode::OUT)
+    {
+        this->state = LOW;
+        this->Write(state);
+    }
+
+    LED(int number, int startState) : Pin(number, PinType::DIGITAL, PinMode::OUT)
+    {
+        this->state = startState;
         this->Write(state);
     }
 

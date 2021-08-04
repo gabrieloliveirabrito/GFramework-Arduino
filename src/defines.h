@@ -1,4 +1,5 @@
 #pragma once
 
-#define PRESSED LOW
-#define RELEASED HIGH
+#define PRESSED HIGH
+#define RELEASED LOW
+#define WITH_ETHERNET

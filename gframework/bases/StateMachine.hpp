@@ -37,6 +37,14 @@ public:
         }
     }
 
+    void TriggerChanged()
+    {
+        for (int i = 0, n = handlers->Count(); i < n; i++)
+        {
+            handlers->GetItem(i)->Trigger();
+        }
+    }
+
 private:
     List<Handler *> *handlers;
 };

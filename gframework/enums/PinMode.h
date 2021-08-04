@@ -1,6 +1,7 @@
 #pragma once
 
-enum PinMode {
+enum PinType
+{
     ANALOG,
     DIGITAL
 };
