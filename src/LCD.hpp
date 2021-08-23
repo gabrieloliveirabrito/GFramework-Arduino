@@ -4,10 +4,21 @@
 #include "pins.h"
 #include "LCDIcons.hpp"
 
+//#define CUSTOM_DELAY
+
 class LCD : public Component
 {
 private:
     DateTime lastDT;
+
+    void Delay(int n)
+    {
+#ifdef CUSTOM_DELAY
+        delay(n);
+#else
+        delay(100);
+#endif
+    }
 
 public:
     LCD()
@@ -31,7 +42,7 @@ public:
         lcd->display();
 
         contrastPin->Write(30);
-        delay(50);
+        this->Delay(50);
     }
 
     void Clear()
@@ -43,12 +54,44 @@ public:
     {
         lcd->clear();
 
-        lcd->setCursor(0, 0);
         lcd->print("===ATX Panel===");
         lcd->setCursor(0, 1);
         lcd->print("Initializing....");
 
-        delay(3000);
+        this->Delay(2000);
+    }
+
+    void ShowSDCardInit()
+    {
+        lcd->clear();
+
+        lcd->print("Initializing");
+        lcd->setCursor(0, 1);
+        lcd->print("SD Card");
+
+        this->Delay(500);
+    }
+
+    void ShowSDCardFailed()
+    {
+        lcd->clear();
+
+        lcd->print("Failed to load");
+        lcd->setCursor(0, 1);
+        lcd->print("SD Card");
+
+        this->Delay(1500);
+    }
+
+    void ShowSDCardPreConfig()
+    {
+        lcd->clear();
+
+        lcd->print("SD Card Loaded");
+        lcd->setCursor(0, 1);
+        lcd->print("Loading config..");
+
+        this->Delay(500);
     }
 
     void ShowFetchingDHCP()
@@ -63,7 +106,7 @@ public:
         lcd->print("No Ethernet");
         lcd->setCursor(0, 1);
         lcd->print("Shield installed");
-        delay(3000);
+        this->Delay(1500);
     }
 
     void ShowNoEthernetCable()
@@ -72,7 +115,7 @@ public:
         lcd->print("No Ethernet");
         lcd->setCursor(0, 1);
         lcd->print("Cable plugged");
-        delay(3000);
+        this->Delay(1500);
     }
 
     void ShowDHCPFailed()
@@ -81,7 +124,7 @@ public:
         lcd->print("Failed to fetch");
         lcd->setCursor(0, 1);
         lcd->print("IP from DHCP");
-        delay(3000);
+        this->Delay(1500);
     }
 
     void ShowNoEthernet()
@@ -90,14 +133,23 @@ public:
         lcd->print("The Ethernet mod");
         lcd->setCursor(0, 1);
         lcd->print("not enabled now");
-        delay(3000);
+        this->Delay(1500);
     }
 
     void ShowEthernetIP(IPAddress ip)
     {
         lcd->setCursor(0, 1);
         lcd->print(ip);
-        delay(3000);
+        this->Delay(1500);
+    }
+
+    void ShowStartingServer()
+    {
+        lcd->clear();
+        lcd->print("Starting ");
+        lcd->setCursor(0, 1);
+        lcd->print("TCP Server");
+        this->Delay(1000);
     }
 
     void ShowSyncing()
@@ -116,8 +168,6 @@ public:
 
         lcd->setCursor(0, 0);
         lcd->print("PC");
-        lcd->setCursor(0, 1);
-        lcd->print("00:00:00");
     }
 
     void ShowClock(DateTime dt)
@@ -138,13 +188,13 @@ public:
             lcd->print(dt.min);
         }
 
-        lcd->setCursor(6, 1);
+        /*lcd->setCursor(6, 1);
         if (lastDT.sec != dt.sec)
         {
             if (dt.sec < 10)
                 lcd->print("0");
             lcd->print(dt.sec);
-        }
+        }*/
     }
 
     void ShowClockError()
@@ -160,7 +210,7 @@ public:
 
         lcd->setCursor(0, 1);
         lcd->print("Already on!");
-        delay(2000);
+        this->Delay(2000);
     }
 
     void ShowPCPoweringOn()
@@ -178,7 +228,7 @@ public:
         lcd->print("Computer");
         lcd->setCursor(0, 1);
         lcd->print("Powered on!");
-        delay(2000);
+        this->Delay(2000);
     }
 
     void ShowPCAlreadyOff()
@@ -187,7 +237,7 @@ public:
         lcd->print("Computer");
         lcd->setCursor(0, 1);
         lcd->print("Already on!");
-        delay(2000);
+        this->Delay(2000);
     }
 
     void ShowPCPoweringOff()
@@ -204,7 +254,7 @@ public:
         lcd->print("Computer");
         lcd->setCursor(0, 1);
         lcd->print("Powered off!");
-        delay(2000);
+        this->Delay(2000);
         lcd->clear();
     }
 

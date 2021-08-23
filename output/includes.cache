@@ -11,6 +11,11 @@
   },
   {
     "Sourcefile": "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\output\\sketch\\gframework.ino.cpp",
+    "Include": "TimeLib.h",
+    "Includepath": "C:\\Users\\gabri\\Documents\\Arduino\\libraries\\Time"
+  },
+  {
+    "Sourcefile": "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\output\\sketch\\gframework.ino.cpp",
     "Include": "SPI.h",
     "Includepath": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\SPI\\src"
   },
@@ -21,8 +26,18 @@
   },
   {
     "Sourcefile": "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\output\\sketch\\gframework.ino.cpp",
+    "Include": "ArduinoJson.h",
+    "Includepath": "C:\\Users\\gabri\\Documents\\Arduino\\libraries\\ArduinoJson\\src"
+  },
+  {
+    "Sourcefile": "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\output\\sketch\\gframework.ino.cpp",
     "Include": "Wire.h",
     "Includepath": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\Wire\\src"
+  },
+  {
+    "Sourcefile": "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\output\\sketch\\gframework.ino.cpp",
+    "Include": "SD.h",
+    "Includepath": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src"
   },
   {
     "Sourcefile": "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\output\\sketch\\gframework.ino.cpp",
@@ -31,6 +46,16 @@
   },
   {
     "Sourcefile": "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\output\\sketch\\gframework.ino.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\gabri\\Documents\\Arduino\\libraries\\Time\\DateStrings.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\gabri\\Documents\\Arduino\\libraries\\Time\\Time.cpp",
     "Include": "",
     "Includepath": null
   },
@@ -86,6 +111,31 @@
   },
   {
     "Sourcefile": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\Wire\\src\\utility\\twi.c",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\File.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\SD.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\utility\\Sd2Card.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\utility\\SdFile.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\utility\\SdVolume.cpp",
     "Include": "",
     "Includepath": null
   },

@@ -37,7 +37,7 @@ public:
     }
 
     void InitSerial() { InitSerial(9600); }
-    void InitSerial(int baudRate)
+    void InitSerial(unsigned long baudRate)
     {
         Serial.begin(baudRate);
         while (!Serial)

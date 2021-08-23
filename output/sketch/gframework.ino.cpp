@@ -7,6 +7,12 @@
 #endif
 
 Application app;
+
+#line 9 "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\gframework.ino"
+void setup();
+#line 21 "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\gframework.ino"
+void loop();
+#line 9 "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\gframework.ino"
 void setup()
 {
     app.Setup();

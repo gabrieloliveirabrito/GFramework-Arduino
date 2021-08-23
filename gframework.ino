@@ -5,6 +5,7 @@
 #endif
 
 Application app;
+
 void setup()
 {
     app.Setup();

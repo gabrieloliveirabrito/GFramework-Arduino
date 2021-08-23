@@ -9,7 +9,7 @@
 
 #define BEEP_LED 2
 #define POWER_LED 3
-#define HDD_LED 4
+#define HDD_LED 5
 
 #define LCD_CON 36
 #define LCD_RS 37

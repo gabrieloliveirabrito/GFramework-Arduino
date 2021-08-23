@@ -1,9 +1,15 @@
 #line 1 "c:\\Users\\gabri\\Projetos\\Arduino\\GFramework\\src\\application.hpp"
 #pragma once
+#include <TimeLib.h>
+
 #include <SPI.h>
 #include <Ethernet.h>
+#include <ArduinoJson.h>
 
 #include "../gframework/includes.h"
+#include "network/includes.h"
+
+#include "Configuration.hpp"
 #include "LCD.hpp"
 #include "pins.h"
 #include "defines.h"
@@ -13,11 +19,14 @@ byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 class Application : App
 {
 private:
+    Configuration *configuration;
     LCD *lcd;
     LED *blink, *powerLed, *hddLed, *errorLed;
     Pin *moboPwrLed, *moboPwrBtn, *moboHddLed, *moboResetBtn;
     DS3231 *clock;
     DHT *dht;
+
+    TCPServer<Application> *server;
 
     StateMachine<Application, int> *intMachine;
     EventHandler<Application, int> *GetPowerLedEvent, *GetHDDLedEvent;
@@ -30,9 +39,10 @@ private:
 public:
     void Setup()
     {
-        InitSerial();
+        InitSerial(115200);
         Serial.println("Creating components...");
 
+        configuration = RegisterComponent(new Configuration());
         lcd = RegisterComponent(new LCD());
         clock = RegisterComponent(new DS3231());
         blink = RegisterComponent(new LED(LED_BUILTIN));
@@ -72,18 +82,64 @@ public:
         lcd->ShowInitializing();
         blink->Enable();
 
-#ifdef WITH_ETHERNET
-        Serial.println("Initialize Ethernet with DHCP:");
-        lcd->ShowFetchingDHCP();
-        if (Ethernet.begin(mac) == 0)
+#ifdef WITH_SDCARD
+        lcd->ShowSDCardInit();
+
+        Serial.println("Loading configuration...");
+        if (configuration->Load())
         {
-            Serial.println("Failed to configure Ethernet using DHCP");
+            Serial.println("Configuration loaded successfully!");
+            lcd->ShowSDCardPreConfig();
+            //TODO: SDCardPreConfig();
+        }
+        else
+        {
+            Serial.println("Failed to load the configuration!");
+            configuration->Save();
+            lcd->ShowSDCardFailed();
+        }
+#endif
+
+#ifdef WITH_ETHERNET
+
+        bool netInitResult = false;
+        if (configuration->ip == NULL)
+        {
+            Serial.println("Initialize Ethernet with DHCP:");
+            lcd->ShowFetchingDHCP();
+
+            netInitResult = Ethernet.begin(mac) == 0;
+        }
+        else
+        {
+            if (configuration->dns != NULL && configuration->gateway == NULL)
+            {
+                Ethernet.begin(mac, *configuration->ip, *configuration->dns);
+            }
+            else if (configuration->dns != NULL && configuration->gateway != NULL && configuration->subnet == NULL)
+            {
+                Ethernet.begin(mac, *configuration->ip, *configuration->dns, *configuration->gateway);
+            }
+            else if (configuration->dns != NULL && configuration->gateway != NULL && configuration->subnet == NULL)
+            {
+                Ethernet.begin(mac, *configuration->ip, *configuration->dns, *configuration->gateway, *configuration->subnet);
+            }
+            else
+            {
+                Ethernet.begin(mac, *configuration->ip);
+            }
+
+            netInitResult = true;
+        }
+
+        if (!netInitResult)
+        {
+            Serial.println("Failed to configure Ethernet");
 
             if (Ethernet.hardwareStatus() == EthernetNoHardware)
             {
                 Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
                 lcd->ShowNoEthernetHadware();
-                //TODO: No Ethernet
             }
             else if (Ethernet.linkStatus() == LinkOFF)
             {
@@ -91,20 +147,34 @@ public:
                 lcd->ShowNoEthernetCable();
             }
             else
-                lcd->ShowDHCPFailed();
-
-            lcd->ShowNoEthernet();
-            //Ethernet.begin(mac, ip, myDns);
+                lcd->ShowNoEthernet();
         }
         else
         {
-            Serial.print("  DHCP assigned IP ");
+            Serial.print("IP: ");
             Serial.println(Ethernet.localIP());
 
-            lcd->ShowEthernetIP(Ethernet.localIP());
-        }
+            Serial.print("Subnet: ");
+            Serial.println(Ethernet.subnetMask());
 
-        lcd->ShowSyncing();
+            Serial.print("Gateway: ");
+            Serial.println(Ethernet.gatewayIP());
+
+            Serial.print("DNS: ");
+            Serial.println(Ethernet.dnsServerIP());
+
+            lcd->ShowEthernetIP(Ethernet.localIP());
+            lcd->ShowStartingServer();
+
+            server = new TCPServer<Application>(configuration->port);
+            server->Start();
+
+            lcd->ShowSyncing();
+            if (SyncClock(clock))
+                Serial.println("Clock synced!");
+            else
+                Serial.println("Failed to sync clock!");
+        }
 #endif
 
         Serial.println("System initialized");
@@ -147,7 +217,7 @@ public:
             lcd->ShowClockError();
         };
 
-        blink->Toggle();
+        //blink->Toggle();
         App::Run();
     }
 
